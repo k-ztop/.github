@@ -1,0 +1,17 @@
+#!/bin/sh
+# commit-msg: AI 작성 표기(공동 작성자 줄, AI 도구·회사 이름, "Generated with")를 커밋 메시지와 새로 넣는 줄에서 막는다.
+# 2026-10-22 사용자 지시. 패턴은 이 파일 자체가 걸리지 않게 문자 집합으로 적는다.
+pat='co-authored-by|cl[a]ude|anthr[o]pic|generated with|noreply@anthr[o]pic|클[로]드'
+msg=$(grep -v '^#' "$1")
+if printf '%s\n' "$msg" | grep -qiE "$pat"; then
+  echo "commit-msg: 커밋 메시지에 AI 작성 표기가 있습니다. 지우고 다시 커밋하세요:" >&2
+  printf '%s\n' "$msg" | grep -niE "$pat" >&2
+  exit 1
+fi
+added=$(git diff --cached -U0 --no-color -- . ':(exclude).githooks/commit-msg' | grep '^+' | grep -v '^+++' | grep -iE "$pat")
+if [ -n "$added" ]; then
+  echo "commit-msg: 새로 넣는 줄에 AI 작성 표기가 있습니다. 지우고 다시 커밋하세요:" >&2
+  printf '%s\n' "$added" | head -20 >&2
+  exit 1
+fi
+exit 0
